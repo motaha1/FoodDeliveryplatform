@@ -1,69 +1,58 @@
-# FoodFast Modular Monolith (Frontend templates + unified API)
+# Communication Patterns by Feature
 
-## What was added
-- User roles in feature1 (`customer` or `employee`) with lightweight DB migration
-- Frontend pages in `templates/` and assets in `static/`:
-  - `index.html`: login/register with client-side validation
-  - `customer.html`: profile edit, create/list orders, long-poll status, SSE driver location with fake simulation, chat to support
-  - `employee.html`: websocket chat list and conversation, SSE order notifications
-- Unified root `app.py` to register all blueprints and serve templates/static
-- `requirements.txt` for dependencies
+This project demonstrates multiple real-time and near-real-time communication patterns. Each feature focuses on one pattern:
 
-## Central settings
-All shared configuration is in `config/settings.py` and loaded by the monolith `app.py`:
-- `SECRET_KEY`
-- JWT: `JWT_SECRET_KEY`, `JWT_ACCESS_TOKEN_EXPIRES`, `JWT_REFRESH_TOKEN_EXPIRES`, `JWT_HEADER_TYPE`
-- Database: `SQLALCHEMY_DATABASE_URI` (defaults to `sqlite:///instance/foodfast_accounts.db`)
-- Security: `BCRYPT_LOG_ROUNDS`
-- Orders: `LONG_POLL_TIMEOUT`, `ORDER_STATUSES`
-- Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`, `REDIS_PASSWORD`
+1) Feature 1 — Account Management
+- Pattern: Simple Request/Response (classic REST)
+- Use: Registration, login, profile CRUD using standard HTTP.
 
-You can override these via environment variables (e.g., `$env:JWT_SECRET_KEY = '...'`).
+2) Feature 2 — Order Tracking
+- Pattern: Long Polling
+- Use: Client polls the server with a timeout to receive order status updates as they occur.
 
-## Run (Windows PowerShell)
+3) Feature 3 — Driver Location
+- Pattern: Server-Sent Events (SSE)
+- Use: Continuous one-way stream from server to client for live driver location updates.
+
+4) Feature 4 — Restaurant Notifications
+- Pattern: SSE with Redis Pub/Sub
+- Use: Backend subscribes to Redis channel(s) and pushes notifications to browsers over SSE.
+
+5) Feature 5 — Support Chat
+- Pattern: WebSocket
+- Use: Bi-directional, low-latency messaging between client and server for live chat.
+
+6) Feature 6 — Announcements
+- Pattern: SSE with Redis Pub/Sub
+- Use: Broadcast announcements to all connected clients via Redis-backed SSE stream.
+
+7) Feature 7 — Image Upload Processing
+- Pattern: Short Polling
+- Use: Client uploads an image, then polls job status periodically to retrieve results when ready.
+
+## How to run (Windows PowerShell)
+
+1) Optional: create and activate a virtual environment
 ```powershell
-# 1) Create venv (optional)
-python -m venv .venv; .\.venv\Scripts\Activate.ps1
-
-# 2) Install deps
-pip install -r requirements.txt
-
-# 3) Set env (dev uses SQLite in ./instance/foodfast_accounts.db)
-$env:FLASK_ENV = 'development'
-$env:JWT_SECRET_KEY = 'dev-secret'    # change for production
-
-# 4) Start the monolith API + templates
-python app.py
-# Open http://127.0.0.1:5000  (serves /templates/index.html)
-
-# 5) (Optional) Start support chat (separate process/port 5005)
-# Only needed if you want live chat; otherwise UI will fail to connect
-python implementations/feature5_support_chat/app.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
-## Key endpoints used by frontend
-- Auth (feature1):
-  - POST `/api/v1/account/register` {email, password, first_name, last_name, role}
-  - POST `/api/v1/account/login` {email, password}
-  - GET `/api/v1/account/profile` (Bearer access token)
-  - PUT `/api/v1/account/profile` (Bearer)
-  - POST `/api/v1/account/refresh` (Bearer refresh token)
-- Orders (feature2):
-  - POST `/api/v1/orders` {customer_id, items[], delivery_address, total_amount}
-  - GET `/api/v1/orders/customer/{id}`
-  - GET `/api/v1/orders/{order_id}/track?last_status=...&timeout=45` (long polling)
-- Driver location (feature3):
-  - GET `/api/v1/tracking/order/{order_id}/stream?customer_id={id}` (SSE)
-  - POST `/api/v1/drivers/{driver_id}/online` {is_online, current_order_id}
-  - POST `/api/v1/drivers/{driver_id}/location` {latitude, longitude}
-- Notifications (feature4):
-  - GET `/api/v1/orders/stream` (SSE Redis channel)
-  - POST `/api/v1/orders` (publish)
-- Support chat (feature5): Socket.IO on `http://localhost:5005`
+2) Install dependencies
+```powershell
+pip install -r requirements.txt
+```
 
-## Notes
-- All features share one SQLite database file at `instance/foodfast_accounts.db` (auto-created).
-- The frontend saves access and refresh JWTs to cookies and retries with `/api/v1/account/refresh` when a 401 occurs.
-- Driver location in the UI is simulated every 15s when you start stream.
-- Order long-polling requests run continuously with a 45s server timeout per request.
-- Employee can see chat list and receive live order notifications via SSE.
+3) Create a `.env` file in the project root with at least these values
+
+4) Run the app
+```powershell
+python app.py
+```
+
+5) Open the UI in your browser
+- http://127.0.0.1:5000
+
+Notes
+- `.gitignore` ignores only `.env` by design.
+- If you plan to use Feature 7 (image upload), set `AZURE_STORAGE_CONNECTION_STRING` and `AZURE_CONTAINER` in `.env` before testing those endpoints.
