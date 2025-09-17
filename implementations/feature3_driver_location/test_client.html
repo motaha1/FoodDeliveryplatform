@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Simple SSE Driver Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0f1115;color:#eee;}
+ h1{font-size:1.1rem;margin:0 0 .75rem;padding:0;}
+ #wrap{max-width:640px;margin:0 auto;padding:1rem;}
+ #log{background:#111a22;border:1px solid #22313c;min-height:260px;padding:.5rem;font:12px/1.35 ui-monospace,monospace;overflow:auto;white-space:pre-wrap;border-radius:4px;}
+ .row{margin:.5rem 0;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;font-size:.75rem;color:#9aa4af;}
+ button{background:#1d824a;border:0;color:#fff;padding:.45rem .8rem;border-radius:4px;cursor:pointer;font-size:.75rem;font-weight:600;letter-spacing:.05em;}
+ button:disabled{opacity:.45;cursor:not-allowed;}
+ .pill{display:inline-block;background:#1d2530;padding:.2rem .5rem;border-radius:12px;font-size:.65rem;margin-right:.35rem;color:#9aa4af;}
+ #map{position:relative;height:240px;border:1px solid #22313c;border-radius:4px;background:#0c141a;margin:.75rem 0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#60707c;}
+ #marker{position:absolute;width:14px;height:14px;background:#1dbf73;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(29,191,115,.35);transition:top .3s linear,left .3s linear;display:none;}
+ .small{font-size:.65rem;color:#60707c;margin-top:.25rem;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>Driver 1 Live Location (SSE + 0.5s Auto Updates)</h1>
+  <div class="row">
+    <span class="pill" id="apiUrl">API: Loading...</span>
+    <span class="pill">Driver ID: 1</span>
+    <span class="pill">Order ID: 123</span>
+    <span class="pill">Customer ID: 1</span>
+  </div>
+  <div class="row">
+    <button id="btnStart" disabled>Running...</button>
+    <button id="btnStop">Stop</button>
+    <button id="btnClear">Clear Log</button>
+  </div>
+  <div id="map">
+    <div id="marker"></div>
+    <span id="placeholder">Waiting for first SSE event...</span>
+  </div>
+  <div id="log"></div>
+  <div class="small">This page automatically: creates/ensures driver 1, attaches order 123, opens SSE stream, and sends location updates every 500ms with small random drift.</div>
+</div>
+<script>
+(function(){
+  // Auto-detect API URL based on environment
+  function getApiUrl() {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // If running on Azure
+    if (hostname.includes('azurewebsites.net')) {
+      return `${protocol}//${hostname}`;
+    }
+    
+    // If running locally
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//${hostname}:5000`;
+    }
+    
+    // Default to current host
+    return `${protocol}//${window.location.host}`;
+  }
+
+  const API = getApiUrl();
+  const DRIVER_ID = 1;
+  const ORDER_ID = 123;
+  const CUSTOMER_ID = 1;
+
+  const logEl = document.getElementById('log');
+  const marker = document.getElementById('marker');
+  const placeholder = document.getElementById('placeholder');
+  const btnStop = document.getElementById('btnStop');
+  const btnClear = document.getElementById('btnClear');
+  const btnStart = document.getElementById('btnStart');
+  const mapBox = document.getElementById('map');
+
+  // Update API URL display
+  document.getElementById('apiUrl').textContent = `API: ${API}`;
+
+  let baseLat = 31.520400;
+  let baseLng = 34.466800;
+  let currentLat = baseLat;
+  let currentLng = baseLng;
+  let sendTimer = null;
+  let evtSource = null;
+  let running = true;
+  let firstFix = true;
+
+  function log(msg, type='info') {
+    const t = new Date().toISOString().split('T')[1].replace('Z','');
+    logEl.textContent += `[${t}] (${type}) ${msg}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  async function api(path, method='GET', body) {
+    const opt = { method, headers:{'Content-Type':'application/json'} };
+    if(body) opt.body = JSON.stringify(body);
+    const r = await fetch(API+path,opt);
+    if(!r.ok){ let j=null; try{ j=await r.json(); }catch(e){}; throw new Error((j && j.error)||r.status); }
+    try { return await r.json(); } catch(e){ return {}; }
+  }
+
+  async function ensureDriver(){
+    // Try set online; if fails assume driver not created; create it.
+    try {
+      await api(`/api/v1/drivers/${DRIVER_ID}/online`, 'POST', { is_online:true, current_order_id: ORDER_ID });
+      log('Driver online confirmed');
+    } catch(e){
+      log('Online failed, creating driver...');
+      try {
+        await api('/api/v1/drivers', 'POST', { name:'Driver 1', is_online:true, current_order_id: ORDER_ID });
+        log('Driver created & online');
+      } catch(er){ log('Create driver failed: '+er.message,'err'); }
+    }
+  }
+
+  function startSending(){
+    if(sendTimer) return;
+    sendTimer = setInterval(async ()=>{
+      if(!running) return;
+      // small drift
+      currentLat += (Math.random()-0.5)*0.00012; // ~ +-0.00006
+      currentLng += (Math.random()-0.5)*0.00012;
+      try {
+        await api(`/api/v1/drivers/${DRIVER_ID}/location`, 'POST', { latitude: currentLat, longitude: currentLng, order_id: ORDER_ID });
+      } catch(e){ log('Send error: '+e.message,'err'); }
+    }, 500);
+    log('Auto sender started (500ms)');
+  }
+
+  function startStream(){
+    if(evtSource) return;
+    const url = `${API}/api/v1/tracking/order/${ORDER_ID}/stream?customer_id=${CUSTOMER_ID}`;
+    evtSource = new EventSource(url);
+    log('SSE open: '+url);
+
+    evtSource.onmessage = ev => {
+      try {
+        const loc = JSON.parse(ev.data);
+        drawMarker(loc);
+        log(`SSE: lat=${loc.latitude.toFixed(6)} lng=${loc.longitude.toFixed(6)}`);
+      } catch(e){ log('Parse error: '+e.message,'err'); }
+    };
+    evtSource.onerror = () => {
+      log('SSE error/closed','err');
+    };
+  }
+
+  function drawMarker(loc){
+    if(firstFix){ marker.style.display='block'; placeholder.style.display='none'; firstFix=false; }
+    const rect = mapBox.getBoundingClientRect();
+    if(!drawMarker.base){ drawMarker.base = { lat: loc.latitude, lng: loc.longitude }; }
+    const dLat = (loc.latitude - drawMarker.base.lat) * 500000;
+    const dLng = (loc.longitude - drawMarker.base.lng) * 500000;
+    const x = rect.width/2 + dLng;
+    const y = rect.height/2 - dLat;
+    marker.style.left = x+'px';
+    marker.style.top = y+'px';
+  }
+
+  function stopAll(){
+    running = false;
+    if(sendTimer){ clearInterval(sendTimer); sendTimer=null; }
+    if(evtSource){ evtSource.close(); evtSource=null; }
+    log('Stopped all activity');
+    btnStart.disabled = false;
+  }
+  function restart(){
+    if(running) return;
+    running = true;
+    firstFix=true;
+    startSending();
+    startStream();
+    btnStart.disabled = true;
+    log('Restarted');
+  }
+
+  btnStop.onclick = stopAll;
+  btnStart.onclick = restart;
+  btnClear.onclick = () => { logEl.textContent=''; };
+
+  // Boot sequence
+  (async function init(){
+    log('Initializing...');
+    await ensureDriver();
+    startStream();
+    startSending();
+    log('Ready. Tracking driver 1.');
+  })();
+})();
+</script>
+</body>
+</html>

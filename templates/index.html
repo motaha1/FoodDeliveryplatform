@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodFast - Welcome to Deliciousness</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍕</text></svg>">
+  <script>
+    // Basic SPA router redirect after auth
+    function goTo(role) {
+      if (role === 'employee') {
+        window.location.href = '/templates/employee.html';
+      } else {
+        window.location.href = '/templates/customer.html';
+      }
+    }
+  </script>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <script defer src="/static/app.js"></script>
+  <script>
+    window.PAGE = 'auth';
+  </script>
+</head>
+<body>
+  <!-- Hero Background -->
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-orange), var(--warm-orange), var(--golden-yellow)); z-index: -2;"></div>
+  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><defs><pattern id=%22food%22 width=%2250%22 height=%2250%22 patternUnits=%22userSpaceOnUse%22><text x=%2210%22 y=%2220%22 font-size=%2212%22 opacity=%220.1%22>🍕</text><text x=%2230%22 y=%2235%22 font-size=%2210%22 opacity=%220.1%22>🍔</text><text x=%225%22 y=%2245%22 font-size=%228%22 opacity=%220.1%22>🌮</text></pattern></defs><rect width=%22100%22 height=%22100%22 fill=%22url(%23food)%22/></svg>'); z-index: -1;"></div>
+
+  <div class="container" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem;">
+    <div class="card" style="max-width: 500px; width: 100%; position: relative; overflow: visible;">
+      <!-- Brand Header -->
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));">
+          🍕🍔🌮
+        </div>
+        <h1 style="font-family: 'Dancing Script', cursive; font-size: 3.5rem; color: var(--primary-orange); margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
+          FoodFast
+        </h1>
+        <p style="margin: 0.5rem 0 0 0; color: var(--gray-600); font-size: 1.1rem; font-weight: 500;">
+          Your favorite meals, delivered fast! 🚀
+        </p>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tabs" style="margin-bottom: 2rem;">
+        <button class="tab active" data-tab="login">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+        <button class="tab" data-tab="register">
+          <i class="fas fa-user-plus"></i> Join Us
+        </button>
+      </div>
+
+      <!-- Login Panel -->
+      <div id="login" class="tab-panel active">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 style="color: var(--gray-800); margin-bottom: 0.5rem;">Welcome Back!</h2>
+          <p style="color: var(--gray-600); margin: 0;">Sign in to your delicious account</p>
+        </div>
+        
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">
+              <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input type="email" id="loginEmail" required placeholder="your.email@example.com" />
+          </div>
+          
+          <div class="form-group">
+            <label for="loginPassword">
+              <i class="fas fa-lock"></i> Password
+            </label>
+            <input type="password" id="loginPassword" required placeholder="Enter your password" />
+          </div>
+          
+          <!-- Quick Login Buttons for Testing -->
+          <div style="display: flex; gap: 10px; margin: 1rem 0;">
+            <button type="button" onclick="fillCustomerLogin()" 
+                    style="flex: 1; padding: 8px 12px; background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+              <i class="fas fa-user"></i> Customer
+            </button>
+            <button type="button" onclick="fillEmployeeLogin()" 
+                    style="flex: 1; padding: 8px 12px; background: #f3e5f5; color: #7b1fa2; border: 1px solid #e1bee7; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+              <i class="fas fa-briefcase"></i> Employee
+            </button>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+            <i class="fas fa-sign-in-alt"></i> Sign In Now
+          </button>
+        </form>
+        <div class="messages" id="loginMsg"></div>
+      </div>
+
+      <!-- Register Panel -->
+      <div id="register" class="tab-panel">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 style="color: var(--gray-800); margin-bottom: 0.5rem;">Join the Food Journey!</h2>
+          <p style="color: var(--gray-600); margin: 0;">Create your account and start ordering</p>
+        </div>
+        
+        <form id="registerForm">
+          <div class="grid2">
+            <div class="form-group">
+              <label for="regFirst">
+                <i class="fas fa-user"></i> First Name
+              </label>
+              <input type="text" id="regFirst" required minlength="2" placeholder="John" />
+            </div>
+            <div class="form-group">
+              <label for="regLast">
+                <i class="fas fa-user"></i> Last Name
+              </label>
+              <input type="text" id="regLast" required minlength="2" placeholder="Doe" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="regEmail">
+              <i class="fas fa-envelope"></i> Email Address
+            </label>
+            <input type="email" id="regEmail" required placeholder="john.doe@example.com" />
+          </div>
+          
+          <div class="form-group">
+            <label for="regPhone">
+              <i class="fas fa-phone"></i> Phone Number
+            </label>
+            <input type="tel" id="regPhone" placeholder="+1 (555) 123-4567" />
+          </div>
+          
+          <div class="form-group">
+            <label for="regPassword">
+              <i class="fas fa-lock"></i> Password
+            </label>
+            <input type="password" id="regPassword" required placeholder="Create a strong password" />
+          </div>
+          
+          <div class="form-group">
+            <label for="regRole">
+              <i class="fas fa-user-tag"></i> Account Type
+            </label>
+            <select id="regRole" required>
+              <option value="customer" selected>🍽️ Customer - I want to order food</option>
+              <option value="employee">👨‍💼 Employee - I work at FoodFast</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+            <i class="fas fa-rocket"></i> Create My Account
+          </button>
+        </form>
+        <div class="messages" id="registerMsg"></div>
+      </div>
+      
+      <!-- Security Notice -->
+      <div style="background: var(--gray-50); border-radius: var(--radius-md); padding: 1rem; margin-top: 1.5rem; border-left: 4px solid var(--info);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <i class="fas fa-shield-alt" style="color: var(--info);"></i>
+          <strong style="color: var(--gray-700); font-size: 0.875rem;">Security Tip</strong>
+        </div>
+        <p style="margin: 0; font-size: 0.875rem; color: var(--gray-600);">
+          Use strong passwords: at least 8 characters with uppercase, lowercase, numbers, and special characters.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div style="background: white; padding: 4rem 1rem; margin-top: 2rem;">
+    <div class="container" style="max-width: 1200px;">
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-family: 'Dancing Script', cursive; font-size: 2.5rem; color: var(--primary-orange); margin-bottom: 1rem;">
+          Why Choose FoodFast?
+        </h2>
+        <p style="color: var(--gray-600); font-size: 1.1rem; max-width: 600px; margin: 0 auto;">
+          We're not just a food delivery service - we're your culinary companion!
+        </p>
+      </div>
+      
+      <div class="grid3">
+        <div style="text-align: center; padding: 2rem 1rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">⚡</div>
+          <h3 style="color: var(--gray-800); margin-bottom: 1rem;">Lightning Fast</h3>
+          <p style="color: var(--gray-600); margin: 0;">Average delivery time under 30 minutes</p>
+        </div>
+        
+        <div style="text-align: center; padding: 2rem 1rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🍽️</div>
+          <h3 style="color: var(--gray-800); margin-bottom: 1rem;">Premium Quality</h3>
+          <p style="color: var(--gray-600); margin: 0;">Partnered with the best restaurants in town</p>
+        </div>
+        
+        <div style="text-align: center; padding: 2rem 1rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
+          <h3 style="color: var(--gray-800); margin-bottom: 1rem;">Real-time Tracking</h3>
+          <p style="color: var(--gray-600); margin: 0;">Track your order from kitchen to doorstep</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 3rem 1rem; color: var(--gray-500); background: var(--gray-50); border-top: 1px solid var(--gray-200);">
+    <div style="margin-bottom: 1rem;">
+      <span style="font-size: 2rem;">🍕</span>
+      <span style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary-orange); margin-left: 0.5rem;">
+        FoodFast
+      </span>
+    </div>
+    <p style="margin: 0.5rem 0;">
+      <a href="/docs/" target="_blank" style="color: var(--primary-orange); text-decoration: none; font-weight: 500;">
+        <i class="fas fa-book"></i> API Documentation
+      </a>
+    </p>
+    <p style="margin: 0; font-size: 0.875rem;">
+      © 2025 FoodFast. Bringing deliciousness to your doorstep. Made with ❤️
+    </p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodFast - Customer Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍕</text></svg>">
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/announcement.js"></script>
+  <script>
+    window.PAGE = 'customer';
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <div class="brand">FoodFast</div>
+      <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <span style="color: white; font-weight: 500;">Customer Portal</span>
+        <button id="logoutBtn" class="btn btn-secondary btn-sm">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Welcome Hero Section -->
+  <div class="container" style="padding-top: 2rem;">
+    <div class="card span2" style="margin-bottom: 2rem; text-align: center; background: linear-gradient(135deg, var(--cream) 0%, white 100%); border: 2px solid var(--golden-yellow);">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1rem;">
+        <div style="font-size: 4rem; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));">🍽️</div>
+        <div style="text-align: left;">
+          <h1 style="margin: 0; color: var(--primary-orange); font-family: 'Dancing Script', cursive; font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">
+            Welcome to Your Food Journey!
+          </h1>
+          <p style="margin: 0.5rem 0 0 0; color: var(--gray-600); font-size: 1.2rem; font-weight: 500;">
+            Delicious meals delivered fresh to your doorstep
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="grid2">
+      <!-- Profile Section -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div>
+            <h2 class="card-title">My Profile</h2>
+            <p class="card-subtitle">Manage your account details</p>
+          </div>
+        </div>
+        
+        <form id="profileForm">
+          <div class="grid2">
+            <div class="form-group">
+              <label for="firstName">
+                <i class="fas fa-user"></i> First Name
+              </label>
+              <input id="firstName" placeholder="Enter first name" />
+            </div>
+            <div class="form-group">
+              <label for="lastName">
+                <i class="fas fa-user"></i> Last Name
+              </label>
+              <input id="lastName" placeholder="Enter last name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="phone">
+              <i class="fas fa-phone"></i> Phone Number
+            </label>
+            <input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
+          </div>
+          <div class="row" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Save Changes
+            </button>
+            <span id="profileMsg" class="messages" style="margin: 0; margin-left: 1rem;"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- Order Creation -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <div>
+            <h2 class="card-title">Place New Order</h2>
+            <p class="card-subtitle">What would you like to eat today?</p>
+          </div>
+        </div>
+        
+        <form id="orderForm">
+          <div class="form-group">
+            <label for="restaurantName">
+              <i class="fas fa-store"></i> Restaurant (Optional)
+            </label>
+            <input id="restaurantName" placeholder="e.g., Mario's Pizza, Burger Palace..." />
+          </div>
+          <div class="form-group">
+            <label for="deliveryAddress">
+              <i class="fas fa-map-marker-alt"></i> Delivery Address *
+            </label>
+            <input id="deliveryAddress" required placeholder="123 Main St, City, State, ZIP" />
+          </div>
+          <div class="form-group">
+            <label for="items">
+              <i class="fas fa-utensils"></i> Order Items
+            </label>
+            <input id="items" placeholder="e.g., 2x Margherita Pizza, 1x Garlic Bread, 2x Coke" />
+          </div>
+          <div class="form-group">
+            <label for="totalAmount">
+              <i class="fas fa-dollar-sign"></i> Total Amount *
+            </label>
+            <input id="totalAmount" type="number" step="0.01" min="0" required placeholder="0.00" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+            <i class="fas fa-check-circle"></i> Place Order Now
+          </button>
+          <div id="orderMsg" class="messages"></div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Orders History -->
+    <section class="card span2">
+      <div class="card-header">
+        <div class="card-icon">
+          <i class="fas fa-history"></i>
+        </div>
+        <div>
+          <h2 class="card-title">My Orders</h2>
+          <p class="card-subtitle">Track your order history and status</p>
+        </div>
+      </div>
+      <div id="ordersList" class="list"></div>
+    </section>
+
+    <!-- Driver Location Tracking -->
+    <section class="card span2">
+      <div class="card-header">
+        <div class="card-icon">
+          <i class="fas fa-truck"></i>
+        </div>
+        <div>
+          <h2 class="card-title">Live Driver Tracking</h2>
+          <p class="card-subtitle">Track your delivery in real-time</p>
+        </div>
+      </div>
+      
+      <div id="map" class="map" style="margin-bottom: 1.5rem;">
+        <img src="/static/img/map-placeholder.svg" alt="map" style="opacity: 0.3;" />
+        <div id="marker" class="marker" style="left:50%;top:50%"></div>
+      </div>
+      
+      <div class="grid2" style="gap: 1rem; margin-bottom: 1rem;">
+        <div class="form-group">
+          <label for="trackOrderId">
+            <i class="fas fa-receipt"></i> Order ID
+          </label>
+          <input id="trackOrderId" type="number" min="1" placeholder="Enter order ID" />
+        </div>
+        <div class="form-group">
+          <label for="driverId">
+            <i class="fas fa-id-card"></i> Driver ID
+          </label>
+          <input id="driverId" type="number" min="1" value="1" placeholder="Driver ID" />
+        </div>
+      </div>
+      
+      <div class="row" style="gap: 1rem;">
+        <button id="startStream" class="btn btn-success">
+          <i class="fas fa-play"></i> Start Tracking
+        </button>
+        <button id="stopStream" class="btn btn-danger">
+          <i class="fas fa-stop"></i> Stop Tracking
+        </button>
+      </div>
+      
+      <div style="margin-top: 1rem;">
+        <h4 style="margin-bottom: 0.5rem; color: var(--gray-700);">
+          <i class="fas fa-terminal"></i> Location Log
+        </h4>
+        <pre id="locLog" class="log"></pre>
+      </div>
+    </section>
+
+    <!-- Customer Support Chat -->
+    <section class="card span2">
+      <div class="card-header">
+        <div class="card-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <div>
+          <h2 class="card-title">Customer Support</h2>
+          <p class="card-subtitle">Chat with our friendly support team</p>
+        </div>
+      </div>
+      
+      <div id="chatBox" class="chat">
+        <div id="chatMessages" class="chat-messages">
+          <div class="bubble other" style="opacity: 0.7;">
+            <strong>Support Agent:</strong> Hi! How can I help you today? 😊
+          </div>
+        </div>
+        <div class="chat-input">
+          <input id="chatInput" placeholder="Type your message here..." />
+          <button id="chatSend" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+        </div>
+        <div id="typing" class="typing"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="text-align: center; padding: 3rem 1rem; color: var(--gray-500); background: var(--gray-50); margin-top: 4rem; border-top: 1px solid var(--gray-200);">
+    <div style="margin-bottom: 1rem;">
+      <span style="font-size: 2rem;">🍕</span>
+      <span style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary-orange); margin-left: 0.5rem;">
+        FoodFast
+      </span>
+    </div>
+    <p style="margin: 0.5rem 0;">
+      <a href="/docs/" target="_blank" style="color: var(--primary-orange); text-decoration: none; font-weight: 500;">
+        <i class="fas fa-book"></i> API Documentation
+      </a>
+    </p>
+    <p style="margin: 0; font-size: 0.875rem;">
+      © 2025 FoodFast. Delivering happiness, one meal at a time. 🚀
+    </p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodFast - Employee Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍕</text></svg>">
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/announcement.js"></script>
+  <script>
+    window.PAGE = 'employee';
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <div class="brand">FoodFast</div>
+      <div class="user-info">
+        <div class="user-avatar">👨‍💼</div>
+        <span style="color: white; font-weight: 500;">Employee Portal</span>
+        <button id="logoutBtn" class="btn btn-secondary btn-sm">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Welcome Hero Section -->
+  <div class="container" style="padding-top: 2rem;">
+    <div class="card span2" style="margin-bottom: 2rem; text-align: center; background: linear-gradient(135deg, var(--sage-green) 0%, var(--success) 100%); color: white;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1rem;">
+        <div style="font-size: 4rem; filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));">👨‍🍳</div>
+        <div style="text-align: left;">
+          <h1 style="margin: 0; color: white; font-family: 'Dancing Script', cursive; font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            Employee Dashboard
+          </h1>
+          <p style="margin: 0.5rem 0 0 0; color: rgba(255,255,255,0.9); font-size: 1.2rem; font-weight: 500;">
+            Manage orders and provide excellent customer support
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div class="grid2">
+      <!-- Incoming Orders Section -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background: linear-gradient(135deg, var(--warning), var(--golden-yellow));">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div>
+            <h2 class="card-title">Incoming Orders</h2>
+            <p class="card-subtitle">Real-time order notifications</p>
+          </div>
+        </div>
+        
+        <div style="background: var(--gray-50); border-radius: var(--radius-lg); padding: 1rem; margin-bottom: 1rem; text-align: center;">
+          <div style="color: var(--warning); font-size: 2rem; margin-bottom: 0.5rem;">
+            🔔
+          </div>
+          <p style="margin: 0; color: var(--gray-600); font-weight: 500;">
+            Waiting for new orders...
+          </p>
+          <p style="margin: 0.25rem 0 0 0; color: var(--gray-500); font-size: 0.875rem;">
+            Orders will appear here automatically
+          </p>
+        </div>
+        
+        <div id="ordersNotifications" class="list"></div>
+      </section>
+
+      <!-- Restaurant Announcements -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon" style="background: linear-gradient(135deg, var(--info), var(--primary-orange));">
+            <i class="fas fa-bullhorn"></i>
+          </div>
+          <div>
+            <h2 class="card-title">Restaurant Announcements</h2>
+            <p class="card-subtitle">Manage customer announcements</p>
+          </div>
+        </div>
+        
+        <!-- Create New Announcement Button -->
+        <div style="margin-bottom: 1.5rem;">
+          <button id="createAnnouncementBtn" class="btn btn-primary" 
+                  onclick="toggleAnnouncementForm()"
+                  style="width: 100%; padding: 0.875rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <i class="fas fa-plus"></i>
+            ➕ Create New Announcement
+          </button>
+        </div>
+        
+        <!-- Announcement Form (Hidden by default) -->
+        <div id="announcementForm" style="display: none; background: var(--gray-50); padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem;">
+          <h4 style="margin: 0 0 1rem 0; color: var(--gray-700);">📝 New Announcement</h4>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--gray-700);">
+              🏷️ Title
+            </label>
+            <input type="text" id="announcementTitle" placeholder="Enter announcement title..."
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; 
+                          font-size: 1rem; box-sizing: border-box;">
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--gray-700);">
+              📄 Message
+            </label>
+            <textarea id="announcementMessage" placeholder="Enter announcement message..." rows="4"
+                      style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; 
+                             font-size: 1rem; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--gray-700);">
+              🏪 Restaurant
+            </label>
+            <input type="text" id="announcementRestaurant" placeholder="Restaurant name (optional)"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; 
+                          font-size: 1rem; box-sizing: border-box;">
+          </div>
+          
+          <div style="display: flex; gap: 0.75rem;">
+            <button onclick="createAnnouncement()" class="btn btn-primary" style="flex: 1;">
+              🚀 Send Announcement
+            </button>
+            <button onclick="cancelAnnouncementForm()" class="btn btn-secondary">
+              ❌ Cancel
+            </button>
+          </div>
+        </div>
+        
+        <!-- Announcements List -->
+        <div id="announcementsList" style="background: var(--gray-50); border-radius: var(--radius-lg); padding: 1rem; text-align: center;">
+          <div style="color: var(--gray-400); font-size: 2rem; margin-bottom: 0.5rem;">�</div>
+          <p style="margin: 0; color: var(--gray-600); font-weight: 500;">No announcements yet</p>
+          <p style="margin: 0.25rem 0 0 0; color: var(--gray-500); font-size: 0.875rem;">
+            Create your first announcement above
+          </p>
+        </div>
+        
+        <!-- Status Message -->
+        <div id="announcementStatus" style="margin-top: 1rem; padding: 0.75rem; border-radius: 6px; 
+                                           display: none; font-weight: 500;"></div>
+      </section>
+    </div>
+
+    <!-- Support Chats Section -->
+    <section class="card span2">
+      <div class="card-header">
+        <div class="card-icon" style="background: linear-gradient(135deg, var(--primary-orange), var(--warm-orange));">
+          <i class="fas fa-headset"></i>
+        </div>
+        <div>
+          <h2 class="card-title">Customer Support Center</h2>
+          <p class="card-subtitle">Help customers with their inquiries</p>
+        </div>
+      </div>
+      
+      <div class="grid2" style="gap: 2rem;">
+        <!-- Chat List -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 1rem;">
+            <h3 style="margin: 0; color: var(--gray-700); font-size: 1.125rem;">
+              <i class="fas fa-comments"></i> Active Chats
+            </h3>
+            <span style="background: var(--success); color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+              ONLINE
+            </span>
+          </div>
+          
+          <div style="background: var(--gray-50); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; margin-bottom: 1rem;">
+            <div style="color: var(--gray-400); font-size: 3rem; margin-bottom: 0.5rem;">💬</div>
+            <p style="margin: 0; color: var(--gray-600); font-weight: 500;">No active chats</p>
+            <p style="margin: 0.25rem 0 0 0; color: var(--gray-500); font-size: 0.875rem;">
+              Customer chats will appear here
+            </p>
+          </div>
+          
+          <div id="chatList" class="list"></div>
+        </div>
+        
+        <!-- Chat Conversation -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: between; margin-bottom: 1rem;">
+            <h3 style="margin: 0; color: var(--gray-700); font-size: 1.125rem;">
+              <i class="fas fa-comment-dots"></i> Conversation
+            </h3>
+            <span style="background: var(--gray-200); color: var(--gray-600); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+              Select a chat
+            </span>
+          </div>
+          
+          <div id="agentChat" class="chat">
+            <div id="agentMessages" class="chat-messages">
+              <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎧</div>
+                <p style="margin: 0; font-weight: 500;">Ready to help customers!</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                  Select a chat from the left to start conversation
+                </p>
+              </div>
+            </div>
+            <div class="chat-input">
+              <input id="agentInput" placeholder="Type your reply to customer..." />
+              <button id="agentSend" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast for notifications -->
+  <div id="toast" class="toast"></div>
+
+  <footer style="text-align: center; padding: 3rem 1rem; color: var(--gray-500); background: var(--gray-50); margin-top: 4rem; border-top: 1px solid var(--gray-200);">
+    <div style="margin-bottom: 1rem;">
+      <span style="font-size: 2rem;">🍕</span>
+      <span style="font-family: 'Dancing Script', cursive; font-size: 1.5rem; color: var(--primary-orange); margin-left: 0.5rem;">
+        FoodFast Employee Portal
+      </span>
+    </div>
+    <p style="margin: 0.5rem 0;">
+      <a href="/docs/" target="_blank" style="color: var(--primary-orange); text-decoration: none; font-weight: 500;">
+        <i class="fas fa-book"></i> API Documentation
+      </a>
+    </p>
+    <p style="margin: 0; font-size: 0.875rem;">
+      © 2025 FoodFast. Empowering our team to deliver excellence. 🚀
+    </p>
+  </footer>
+</body>
+</html>
