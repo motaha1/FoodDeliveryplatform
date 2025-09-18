@@ -56,3 +56,4 @@ python app.py
 Notes
 - `.gitignore` ignores only `.env` by design.
 - If you plan to use Feature 7 (image upload), set `AZURE_STORAGE_CONNECTION_STRING` and `AZURE_CONTAINER` in `.env` before testing those endpoints.
+- can test it via https://gsg-fgcfh9anhaeqaff9.uaenorth-01.azurewebsites.net/
